@@ -1,7 +1,7 @@
 # Tinynest
 남성 의류 쇼핑몰<br>
 ## 🖥 배포 주소
-http://itwill.xyz/tinynest/
+<a href='http://itwill.xyz/tinynest/' target='_blank'>http://itwill.xyz/tinynest/</a>
 ## 📑 프로젝트 소개 
 학원에서 미니 프로젝트로 진행한 남성 의류 쇼핑몰 입니다.
 ## ⏱ 개발 기간
