@@ -1,0 +1,145 @@
+<%@page import="java.util.List"%>
+<%@page import="tinynest.dao.MemberDAO"%>
+<%@page import="tinynest.dto.MemberDTO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<title>Tinynest</title>  
+<%-- MEMBER 테이블에 저장된 모든 회원정보를 검색하여 클라이언트에게 전달하는 JSP문서 --%>
+<%-- 관리자만 요청가능한 JSP 문서 --%>
+<%-- 선택회원삭제 >> member_remove_action.jsp  //    상태변경 >> member_status_action.jsp--%>
+
+<%-- 관리자 회원이 접근했는지 확인. --%>
+<%@include file="/security/admin_check.jspf" %> 
+
+
+<%
+
+	
+	
+	
+	List<MemberDTO> memberList=MemberDAO.getDAO().selectMemberList();
+	
+%>
+
+<style type="text/css">
+#member {
+	width: 1070px;
+	margin-left: 400px;
+}
+table {
+    border: 0;
+    border-collapse: collapse;
+}
+table {
+    border-collapse: separate;
+    text-indent: initial;
+    white-space: normal;
+    line-height: normal;
+    font-weight: normal;
+    font-size: medium;
+    font-style: normal;
+    color: -internal-quirk-inherit;
+    text-align: start;
+    border-spacing: 2px;
+    font-variant: normal;
+}
+th {
+    border: 0;
+    color: #555555;
+	border-top: 1px solid #e8e8e8;
+	text-align: center;
+}
+td{
+	border-top: 1px solid #e8e8e8;
+	text-align: center;
+}
+th {
+    display: table-cell;
+    vertical-align: inherit;
+    font-weight: bold;
+    text-align: -internal-center;
+}
+a:hover {
+	text-decoration: none;
+	font-weight: bold;
+}
+
+.member_check { width: 120px; }
+.member_id { width: 100px; }
+.member_name { width: 100px; }
+.member_email { width: 160px; }
+.member_mobile { width: 320px; }
+.member_address { width: 320px; }
+.member_status { width: 100px; }
+</style>
+
+<div id="member">
+<form name="memberForm" id="memberForm">
+	<table>
+		<tr>
+			<th>아이디</th>
+			<th>이름</th>
+			<th>이메일</th>
+			<th style=" width: 300.862;">전화번호</th>
+			<th>주소</th>
+			<th>상태</th>
+		</tr>
+		
+		<% if(memberList.isEmpty()) { %>
+			<tr>
+				<td colspan="7">등록된 회원이 없습니다.</td>
+			</tr>
+			<%}else{ %>
+		<% for(MemberDTO member:memberList) { %>
+		<tr>
+			<td class="member_id"><%=member.getId() %></td>
+			<td class="member_name"><%=member.getName() %></td>
+			<td class="member_email"><%=member.getEmail() %></td>
+			<td class="member_phone"><%=member.getPhone() %></td>
+			<td class="member_address">
+				[<%=member.getZipcode() %>]<%=member.getAddress1() %> <%=member.getAddress2() %>
+			</td>
+			<td class="member_status">
+				<select class="status" name="<%=member.getId()%>">
+					<option value="0" <% if(member.getStatus()==0) { %> selected="selected" <% } %>>탈퇴회원</option>
+					<option value="1" <% if(member.getStatus()==1) { %> selected="selected" <% } %>>일반회원</option>
+					<option value="9" <% if(member.getStatus()==9) { %> selected="selected" <% } %>>관리자</option>
+				</select>
+			</td>
+		</tr>
+		<% } %>
+		<% } %>
+	</table>
+</form>
+
+</div>
+
+
+<script type="text/javascript" >
+$("#allCheck").change(function() {
+	if($(this).is(":checked")) {
+		$(".check").prop("checked",true);
+	} else {
+		$(".check").prop("checked",false);
+	}
+});
+
+
+$(".status").change(function() {
+	//이벤트가 발생된 입력태그의 태그 속성값을 반환받아 저장
+	// => 회원상태를 변경하고자 하는 회원의 아이디를 제공받아 저장 - 식별자
+	var id=$(this).attr("name");
+	//이벤트가 발생된 입력태그의 입력값을 반환받아 저장
+	// => 변경할 회원상태를 제공받아 저장 - 변경값
+	var status=$(this).val();
+	
+	location.href="<%=request.getContextPath()%>/index.jsp?workgroup=admin&work=member_status_action&id="+id+"&status="+status;
+});
+</script>
+
+
+
+
+
+
+

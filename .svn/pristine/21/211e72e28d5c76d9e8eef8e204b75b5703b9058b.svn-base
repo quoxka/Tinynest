@@ -1,0 +1,99 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%-- <%@include file="/security/admin_check.jspf" %> --%>
+<%
+	String pageNum="1";
+	pageNum=request.getParameter("pageNum");
+%>
+<style type="text/css">
+h2 {
+	margin : 0 auto;
+	text-align: center;
+	margin-bottom: 15px;
+	font-size : 12px;
+}
+table {
+	margin: 0 auto;
+	border:1px solid #d7d5d5;
+}
+input {
+	border:1px solid #d7d5d5;
+}
+textarea {
+	border:1px solid #d7d5d5;
+}
+th {
+	width: 80px;
+	font-weight: normal;
+}
+td {
+	text-align: left;
+}
+#n_content {
+	width : 900px;
+	min-height: 400px;
+}
+.Btn {
+	margin: 0 auto;
+	text-align: center;
+	margin-top: 10px;
+}
+#registBtn {
+	color : #FFF;
+	background-color : #999;
+	border:1px solid #999;
+}
+#resetBtn {
+	border : 1px solid #d7d5d5;
+}
+
+</style>
+<form action="<%=request.getContextPath()%>/index.jsp?workgroup=board&work=notice_write_action"
+	method="post" id="boardForm">
+
+	<input type="hidden" name="pageNum" value="<%=pageNum%>">
+	
+	<h2>NOTICE</h2>
+	
+	<table>
+		<tr>
+			<th class="title">제목</th>
+			<td>
+				<input type="text" name="n_title" id=n_title size="100">
+			</td>	
+		</tr>
+		<tr>
+			<th></th>
+			<td>
+				<textarea rows="7" cols="60" name="n_content" id="n_content"></textarea>
+			</td>
+		</tr>
+	</table>
+	<div class="Btn">
+		<button type="submit" id="registBtn">등록</button>
+		<button type="reset" id="resetBtn">다시쓰기</button> 
+	<!-- <button type="button" id="cancleBtn" onclick="javascript:history.back(-1)">취소</button> -->
+	</div>	
+</form>
+<div id="message" style="color: red;"></div>
+
+<script type="text/javascript">
+$("#n_title").focus();
+$("#boardForm").submit(function() {
+	if($("#n_title").val()=="") {
+		$("#message").text("제목을 입력해 주세요.");
+		$("#n_title").focus();
+		return false;
+	}
+	
+	if($("#n_content").val()=="") {
+		$("#message").text("내용을 입력해 주세요.");
+		$("#n_content").focus();
+		return false;
+	}
+});
+$("#resetBtn").click(function() {
+	$("#n_title").focus();
+	$("#message").text("");
+});
+</script>

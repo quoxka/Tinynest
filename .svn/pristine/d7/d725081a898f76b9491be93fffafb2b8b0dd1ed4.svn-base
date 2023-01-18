@@ -1,0 +1,432 @@
+<%@page import="java.util.Arrays"%>
+<%@page import="tinynest.dao.MemberDAO"%>
+<%@page import="java.text.DecimalFormat"%>
+<%@page import="tinynest.dto.BasketDTO"%>
+<%@page import="java.util.ArrayList"%>
+<%@page import="java.util.List"%>
+<%@page import="tinynest.dao.BasketDAO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+  
+<%@include file="/security/login_url.jspf" %>  
+<%
+	request.setCharacterEncoding("utf-8");
+
+	//비정상적인 요청 검증
+	if (request.getParameter("item") == null) {
+		out.println("<script type='text/javascript'>");
+		out.println("location.href='"+request.getContextPath()+"/index.jsp?workgroup=error&work=error_400';");
+		out.println("</script>");
+		return;
+	}
+	
+	String loginId = loginMember.getId();
+	
+	//쿼리스트링으로 넘어온 item을 배열화
+	String[] item = request.getParameterValues("item");
+	
+	StringBuilder itemBuilder = new StringBuilder();
+	for (String str : item) {
+		itemBuilder.append(str + " ");
+	}
+	String items = itemBuilder.toString();
+	
+	//쿼리스트링(item)으로 넘어오는 상품의 정보를 담을 리스트
+	List<BasketDTO> productList = new ArrayList<>();
+		
+	//접속 중인 ID에 해당하는 회원의 장바구니 목록에서 주어진 상품코드에 해당하는 상품 정보 반환
+	for (String itemCode : item) {
+		BasketDTO product = BasketDAO.getDAO().selectBasketByBcode(loginId, Integer.parseInt(itemCode));
+		productList.add(product);
+	}
+	
+	if (productList.size() == 0) {
+		out.println("<script type='text/javascript'>");
+		out.println("location.href='"+request.getContextPath()+"/index.jsp?workgroup=error&work=error_400';");
+		out.println("</script>");
+		return;
+	}
+
+	int deliveryFee = 0;
+	int totalPrice = 0;
+	for (BasketDTO product : productList) {
+		totalPrice += product.getpPrice() * product.getbAmount();
+	}
+		
+	MemberDTO member = MemberDAO.getDAO().selectMember(loginId);
+	String username = member.getName();
+	String phone = member.getPhone();
+	String[] phoneArr = phone.split("-");
+	int zipCode = member.getZipcode();
+	String address1 = member.getAddress1();
+	String address2 = member.getAddress2();
+	String email = member.getEmail();
+	String[] emailArr = email.split("@");
+%>
+
+<style type="text/css">
+button {
+	background-color: #e0e0e0;
+	border-radius: 2px;
+	border: 1px solid #d7d5d5;
+}
+
+#purchaseContainer {
+	margin: 50px auto;
+	padding: 0 400px;
+}
+
+#purchaseTitle {
+	text-align: left;
+	margin-bottom: 30px;
+}
+
+#purchaseTable {
+	border: 2px solid black;
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	margin-bottom: 20px;
+	width: 100%;
+}
+
+#purchaseTable th, #purchaseTable td {
+	border-bottom: 1px solid #e6e6e6;
+	height: 40px;
+	font-size: 1.3em;
+}
+
+#purchaseTable tr td {
+	text-align: center;
+	border-top: 2px solid #e6e6e6;
+}
+
+#totalInfoTable {
+	border: 0;
+	width: 300px;
+	font-size: 1.3em;
+}
+
+#totalInfoTable th, #totalInfoTable td {
+	text-align: right;
+	border-style: none;
+	padding: 4px;
+}
+
+#totalInfoTable th {
+	width: 60%;
+}
+
+#totalInfoTable td {
+	width: 40%;
+}
+
+#info {
+	margin: 50px;
+}
+
+.orderInfo {
+	margin: 50px 50px 10px;
+	width: 800px;
+	height: 300px;
+	border-collapse: collapse;
+}
+
+.orderInfo caption {
+	padding: 5px;
+	text-align: left;
+	font-size: 1.2em;
+	font-weight: bold;
+}
+
+.orderInfo th {
+	border-bottom: 1px solid #e6e6e6;
+	border-left-style: none;
+	border-right-style: none;
+	background-color: #f4f4f4;
+	padding: 10px;
+	width: 20%;
+	text-align: center;
+	font-size: 1.2em;
+}
+
+.orderInfo td {
+	border-bottom: 1px solid #e6e6e6;
+	border-left-style: none;
+	border-right-style: none;
+	padding: 20px 10px 10px 10px;
+	font-size: 1.2em;
+	line-height: 25px;
+}
+
+.orderInfo tr:first-child > th, .orderInfo tr:first-child > td{
+	border-top: 1px solid black;
+}
+
+.orderInfo tr:last-child > th, .orderInfo tr:last-child > td{
+	border-bottom: 1px solid black;
+}
+
+.orderInfo input {
+	height: 20px;
+	border-radius: 0;
+	border: 1px solid #bcbcbc;
+	padding: 2px;
+	margin: 2px;
+}
+
+.orderInfo .destinationAddress {
+	width: 350px;
+}
+
+.orderInfo .destinationPhone {
+	text-align: center;
+}
+
+#infoRadio {
+	height: 30px;
+}
+
+.errorDiv {
+	position: relative;
+	top: 3px;
+	height: 15px;
+}
+
+.error {
+	color: red;
+	position: absolute;
+	visibility: hidden;
+}
+
+#submitDiv {
+	width: 850px;
+}
+
+#purchaseBtn {
+	margin-right: 10px;
+}
+</style>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
+<body>
+	<div id="purchaseContainer">
+		<div id="purchaseProductList">
+			<div id="purchaseTitle">ORDER</div>
+			<table id="purchaseTable">
+				<tr>
+					<th>이미지</th>
+					<th>상품명</th>
+					<th>상품가격</th>
+					<th>개수</th>
+					<th>합계</th>
+				</tr>
+			<% for (BasketDTO product : productList) { %>
+				<tr>
+					<td>
+						<img alt="productImg" src="<%=request.getContextPath()%>/product_image/<%=product.getpImg()%>" width="80px" height="100px">
+					</td>
+					<td><%=product.getpName()%></td>
+					<td><%=DecimalFormat.getCurrencyInstance().format(product.getpPrice())%></td>
+					<td><%=product.getbAmount()%></td>
+					<td><%=DecimalFormat.getCurrencyInstance().format(product.getpPrice() * product.getbAmount())%></td>
+				</tr>
+			<% } %>
+			</table>
+			<div id="totalInfo" align="right">
+				<table id="totalInfoTable">
+					<tr>
+						<th>상품 합계금액</th>
+						<td><%=DecimalFormat.getCurrencyInstance().format(totalPrice)%></td>
+					</tr>
+					<tr>
+						<th>배송비</th>
+						<td><%=DecimalFormat.getCurrencyInstance().format(deliveryFee)%></td>
+					</tr>
+					<tr>
+						<th>총 주문합계 금액</th>
+						<td><%=DecimalFormat.getCurrencyInstance().format(totalPrice + deliveryFee)%></td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		
+		<div id="info">
+			<form id="orderForm" name="orderForm">
+				<input type="hidden" name="items" value="<%=items%>">
+				<input type="hidden" name="totalPrice" value="<%=totalPrice%>">
+				<div class="orderDiv">
+					<table class="orderInfo">
+						<caption>주문자 정보</caption>
+						<tr>
+							<th>성명</th>
+							<td><span id="orderName"><%=username%></span></td>
+						</tr>
+						<tr>
+							<th>주소</th>
+							<td>
+								<span id="orderZipcode"><%=zipCode%></span><br>
+								<span id="orderAddress1"><%=address1%></span><br>
+								<span id="orderAddress2"><%=address2%></span>
+							</td>
+						</tr>
+						<tr>
+							<th>전화번호</th>
+							<td>
+								<span id="orderPhone1"><%=phoneArr[0]%></span>&nbsp;-
+								<span id="orderPhone2"><%=phoneArr[1]%></span>&nbsp;-
+								<span id="orderPhone3"><%=phoneArr[2]%></span>
+							</td>
+						</tr>
+					</table>
+				</div>
+				
+				<div class="orderDiv">
+					<table class="orderInfo">
+						<caption>
+							배송지 정보&nbsp;&nbsp;&nbsp;
+							<span id="infoRadio">
+								<label for="eqInfo">주문자 정보와 동일</label>
+								<input type="radio" id="eqInfo" name="destinationInfo" value="Y">
+								<label for="difInfo">새로운 배송지</label>
+								<input type="radio" id="difInfo" name="destinationInfo" value="N">
+							</span>
+						</caption>
+						<tr>
+							<th>성명</th>
+							<td>
+								<input type="text" id="destinationName" name="destinationName">
+								<div class="errorDiv">
+									<div id="nameMsg" class="error">수령자 이름을 입력해주세요.</div>
+									<div id="nameRegMsg" class="error">이름은 한글, 영어만 입력 가능합니다.</div>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<th>주소</th>
+							<td>
+								<input type="text" id="destinationZipcode" name="destinationZipcode" size="5" readonly="readonly">
+								<span id="postSearch"><img src="<%=request.getContextPath() %>/members/images/postSearch.png" alt="postSearch"></span>
+								<br>
+								<input type="text" id="destinationAddress1" class="destinationAddress" name="destinationAddress1" readonly="readonly">
+								<span>기본주소</span>
+								<br>
+								<input type="text" id="destinationAddress2" class="destinationAddress" name="destinationAddress2">
+								<span>상세주소</span>
+								<div class="errorDiv">
+									<div id="addressMsg" class="error">배송할 주소를 입력해주세요.</div>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<th>전화번호</th>
+							<td>
+								<select id="destinationPhone1" name="destinationPhone1">
+									<option value="010" selected>010</option>
+									<option value="011">011</option>
+									<option value="019">019</option>
+								</select>
+								-&nbsp;<input type="text" id="destinationPhone2" class="destinationPhone" name="destinationPhone2" size="4" maxlength="4">
+								-&nbsp;<input type="text" id="destinationPhone3" class="destinationPhone" name="destinationPhone3" size="4" maxlength="4">
+								<div class="errorDiv">
+									<div id="phoneMsg" class="error">전화번호를 입력해주세요.</div>
+									<div id="phoneRegMsg" class="error">전화번호는 3~4자리 숫자만 입력 가능합니다.</div>
+								</div>
+							</td>
+						</tr>
+					</table>
+					<div align="right" id="submitDiv">
+						<button type="button" id="purchaseBtn">결제하기</button>
+						<button type="reset">다시입력</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+<script type="text/javascript">
+//주소 자동 설정 radio 버튼 (주문자와 배송지 동일 여부)
+$("input[name='destinationInfo']").change(function() {
+	if ($(this).val() == "Y") {
+		$("#destinationName").val($("#orderName").text());
+		$("#destinationZipcode").val($("#orderZipcode").text());
+		$("#destinationAddress1").val($("#orderAddress1").text());
+		$("#destinationAddress2").val($("#orderAddress2").text());
+		$("#destinationPhone1").val($("#orderPhone1").text());
+		$("#destinationPhone2").val($("#orderPhone2").text());
+		$("#destinationPhone3").val($("#orderPhone3").text());
+		$(".error").css("visibility", "hidden");
+	} else {
+		$("#destinationName").val("");
+		$("#destinationZipcode").val("");
+		$("#destinationAddress1").val("");
+		$("#destinationAddress2").val("");
+		$("#destinationPhone1").val("");
+		$("#destinationPhone2").val("");
+		$("#destinationPhone3").val("");
+		$(".error").css("visibility", "hidden");
+	}
+});
+
+//입력 내용 형식 검증
+$("#purchaseBtn").click(function() {
+	event.stopPropagation();
+	event.preventDefault();
+	
+	let result = true;
+	
+	$(".error").css("visibility", "hidden");
+	
+	//이름 입력 검증
+	const nameReg = /^[가-힣a-zA-Z]+$/g;
+	if ($("#destinationName").val() == "") {
+		$("#nameMsg").css("visibility", "visible");
+		result = false;
+	} else if (!nameReg.test($("#destinationName").val())) {
+		$("#nameRegMsg").css("visibility", "visible");
+		result = false;
+	}
+	
+	//주소 입력 검증
+	if ($("#destinationAddress1").val() == "" || $("#destinationAddress2").val() == "" || $("#destinationAddress3").val() == "") {
+		$("#addressMsg").css("visibility", "visible");
+		result = false;
+	}
+	
+	//전화번호 입력 검증
+	const phoneReg1 = /^\d{3,4}$/;
+	const phoneReg2 = /^\d{4}$/;
+	if ($("#destinationPhone2").val() == "" || $("#destinationPhone3").val() == "") {
+		$("#phoneMsg").css("visibility", "visible");
+		result = false;
+	} else if (!phoneReg1.test($("#destinationPhone2").val()) || !phoneReg2.test($("#destinationPhone3").val())) {
+		$("#phoneRegMsg").css("visibility", "visible");
+		result = false;
+	}
+
+	//입력 형식에 문제가 없으면 결제 팝업창으로 이동
+	if (result) {
+		window.open("", "payPopUp", "width=530, height=600, left=600, top=250, location=no, status=no, menubar=no, resizable=no");
+		$("#orderForm").attr("target", "payPopUp");
+		$("#orderForm").attr("action", "<%=request.getContextPath()%>/purchase/purchase_action.jsp");
+		$("#orderForm").attr("method", "post");
+		$("#orderForm").submit();
+	} else {
+		return result;
+	}
+});
+
+//우편 번호 검색 - 다음 API 활용
+$("#postSearch").click(function() {		
+    new daum.Postcode({
+        oncomplete: function(data) {
+            // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분입니다.
+            // 예제를 참고하여 다양한 활용법을 확인해 보세요.
+            $("#destinationZipcode").val(data.zonecode);
+            $("#destinationAddress1").val(data.roadAddress);
+        }
+    }).open();
+});
+</script>
+</body>
+</html>

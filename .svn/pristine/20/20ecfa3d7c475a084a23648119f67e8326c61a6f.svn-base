@@ -1,0 +1,209 @@
+package tinynest.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import tinynest.dto.NoticeDTO;
+
+public class NoticeDAO extends JdbcDAO {
+	private static NoticeDAO _dao;
+		
+	private NoticeDAO() {
+		// TODO Auto-generated constructor stub
+	}
+		
+	static {
+		_dao=new NoticeDAO();
+	}
+		
+	public static NoticeDAO getDAO() {
+		return _dao;
+	}
+	
+	//검색 관련 정보를 전달받아 NOTICE 테이블에 저장된 특정 게시글의 갯수를 검색하여 반환하는 메소드
+	public int selectNoticeCount(String search, String keyword) {
+		Connection con=null;
+		PreparedStatement pstmt=null;
+		ResultSet rs=null;
+		int count=0;
+		try {
+			con=getConnection();
+			
+			if(keyword.equals("")) {
+				String sql="select count(*) from notice";
+				pstmt=con.prepareStatement(sql);
+			} else {
+				String sql="select count(*) from notice join member on n_id=member.id"
+						+ " where "+search+" like '%'||?||'%' and n_status=1";
+				pstmt=con.prepareStatement(sql);
+				pstmt.setString(1, keyword);
+			}
+			
+			rs=pstmt.executeQuery();
+			if(rs.next()) {
+				count=rs.getInt(1);
+			}
+		} catch (SQLException e) {
+			System.out.println("[에러]selectNoticeCount() 메서드의 SQL 오류 = "+e.getMessage());
+		} finally {
+			close(con,pstmt,rs);
+		}
+		return count;
+	}
+	
+	public List<NoticeDTO> selectNoticeList(int startRow, int endRow, String search, String keyword) {
+		Connection con=null;
+		PreparedStatement pstmt=null;
+		ResultSet rs=null;
+		List<NoticeDTO> noticeList=new ArrayList<>();
+		try {
+			con=getConnection();
+			
+			if(keyword.equals("")) {
+				String sql="select * from (select rownum rn,temp.* from (select n_no,member.id"
+					+ ",name,n_title,n_date,n_content,n_status from notice join member on n_id=member.id"
+					+ " order by n_no desc, n_date desc) temp) where rn between ? and ?";
+				pstmt=con.prepareStatement(sql);
+				pstmt.setInt(1, startRow);
+				pstmt.setInt(2, endRow);
+			} else {
+				String sql="select * from (select rownum rn,temp.* from (select n_no,member.id,name,n_title,n_date,n_content,n_status from notice join member on n_id=member.id"
+						+ " where "+search+" like '%'||?||'%' and n_status=1 order by n_no desc, n_date desc) temp) where rn between ? and ?";
+					pstmt=con.prepareStatement(sql);
+					pstmt.setString(1, keyword);
+					pstmt.setInt(2, startRow);
+					pstmt.setInt(3, endRow);
+			}
+			
+			rs=pstmt.executeQuery();
+			while(rs.next()) {
+				NoticeDTO notice=new NoticeDTO();
+				notice.setN_no(rs.getInt("n_no"));
+				notice.setN_id(rs.getString("id"));
+				notice.setN_writer(rs.getString("name"));
+				notice.setN_title(rs.getString("n_title"));
+				notice.setN_date(rs.getString("n_date"));
+				notice.setN_content(rs.getString("n_content"));
+				notice.setN_status(rs.getInt("n_status"));
+				noticeList.add(notice);
+			}
+		} catch (SQLException e) {
+			System.out.println("[에러]selectNoticeList() 메서드의 SQL 오류 = "+e.getMessage());
+		} finally {
+			close(con,pstmt,rs);
+		}
+		return noticeList;
+		}
+		
+		//notice_SEQ 시퀸스의 다음값을 검색하여 반환하는 메소드
+		public int selectNextNum() {
+			Connection con=null;
+			PreparedStatement pstmt=null;
+			ResultSet rs=null;
+			int nextNum=0;
+			try {
+				con=getConnection();
+				
+				String sql="select notice_seq.nextval from dual";
+				pstmt=con.prepareStatement(sql);
+				
+				rs=pstmt.executeQuery();
+				
+				if(rs.next()) {
+					nextNum=rs.getInt(1);
+				}
+			} catch (SQLException e) {
+				System.out.println("[에러]selectNextNum() 메서드의 SQL 오류 = "+e.getMessage());
+			} finally {
+				close(con, pstmt, rs);
+			}
+			return nextNum;
+		}
+		
+		public int insertNotice(NoticeDTO notice) {
+			Connection con=null;
+			PreparedStatement pstmt=null;
+			int rows=0;
+			try {
+				con=getConnection();
+				
+				String sql="insert into notice values(?,?,?,?,sysdate,?)";
+				pstmt=con.prepareStatement(sql);
+				pstmt.setInt(1, notice.getN_no());
+				pstmt.setString(2, notice.getN_title());
+				pstmt.setString(3, notice.getN_id());
+				pstmt.setString(4, notice.getN_content());
+				pstmt.setInt(5, notice.getN_status());
+				
+				rows=pstmt.executeUpdate();				
+			} catch (SQLException e) {
+				System.out.println("[에러]insertNotice() 메서드의 SQL 오류 = "+e.getMessage());
+			} finally {
+				close(con, pstmt);
+			}
+			return rows;		
+		}
+		
+		//글번호를 전달받아 notice 테이블에 저장된 해당 글번호의 게시글을 검색하여 반환하는 메소드
+		public NoticeDTO selectNotice(int n_no) {
+			Connection con=null;
+			PreparedStatement pstmt=null;
+			ResultSet rs=null;
+			NoticeDTO notice=null;
+			try {
+				con=getConnection();
+				
+				String sql="select n_no,n_title,member.id,name,n_content,n_date,n_status from notice join member"
+						+ " on n_id=member.id where n_no=?";
+				pstmt=con.prepareStatement(sql);
+				pstmt.setInt(1, n_no);
+				
+				rs=pstmt.executeQuery();
+				
+				if(rs.next()) {
+					notice=new NoticeDTO();
+					notice.setN_no(rs.getInt("n_no"));
+					notice.setN_title(rs.getString("n_title"));
+					notice.setN_id(rs.getString("id"));
+					notice.setN_writer(rs.getString("name"));
+					notice.setN_content(rs.getString("n_content"));
+					notice.setN_date(rs.getString("n_date"));
+					notice.setN_status(rs.getInt("n_status"));
+				}
+			} catch (SQLException e) {
+				System.out.println("[에러]selectNotice() 메서드의 SQL 오류 = "+e.getMessage());
+			} finally {
+				close(con,pstmt,rs);
+			} 
+			return notice;
+		}
+		
+		//게시글을 전달받아 NOTICE 테이블에 저장된 해당 게시글을 변경하고 변경행의 갯수를 반환하는 메소드
+		public int updateNotice(NoticeDTO notice) {
+			Connection con=null;
+			PreparedStatement pstmt=null;
+			int rows=0;
+			try {
+				con=getConnection();
+				
+				String sql="update notice set n_title=?,n_content=?,n_status=? where n_no=?";
+				pstmt=con.prepareStatement(sql);
+				pstmt.setString(1, notice.getN_title());
+				pstmt.setString(2, notice.getN_content());
+				pstmt.setInt(3, notice.getN_status());
+				pstmt.setInt(4, notice.getN_no());
+				
+				rows=pstmt.executeUpdate();
+			} catch (SQLException e) {
+				System.out.println("[에러]updateNotice() 메서드의 SQL 오류 = "+e.getMessage());
+			} finally {
+				close(con,pstmt);
+			}
+			return rows;						
+		}
+
+}	

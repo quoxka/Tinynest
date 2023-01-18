@@ -1,0 +1,19 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style type="text/css">
+
+#removePage{margin-left: 300px;}
+
+</style>
+</head>
+<body>
+<div id="removePage">
+	<h1>회원탈퇴 안내페이지</h1>
+	<p>회원탈퇴가 정상적으로 처리되었습니다.<p>
+</div>
+</body>
+</html>

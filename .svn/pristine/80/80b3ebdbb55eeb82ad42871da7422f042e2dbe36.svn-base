@@ -1,0 +1,264 @@
+<%@page import="java.text.DecimalFormat"%>
+<%@page import="tinynest.dto.MemberDTO"%>
+<%@page import="tinynest.dao.PurchaseDAO"%>
+<%@page import="tinynest.dto.PurchaseDTO"%>
+<%@page import="java.util.List"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<title>Tinynest</title>
+<script type="text/javascript" src="Https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<%-- PurchaseDAO의 purchaseList메소드를 통해 구매 주문일,구매 번호,구매자 아이디,구매 총액
+		,배송자 이름,배송자 전화번호,배송자 주소,구매상태를 반환받아 나타내고 
+		검색창에 구매자 아이디,구매번호를 선택해서 포함되는 단어로 검색할 수 있는 기능을가진 검색창 구현 --%>
+
+<%-- 관리자 회원이 접근했는지 확인. --%>
+<%@include file="/security/admin_check.jspf" %>
+
+<%
+
+
+	//검색단어를 반환받아 저장.
+	String keyword=request.getParameter("keyword");
+
+	if(keyword==null) {
+		
+		keyword="";
+		}
+	
+	
+	//페이징 처리 관련 전달값(요청 페이지 번호)를 반환받아 저장
+	// => 요청 페이지 번호에 대한 전달값이 없는 경우 첫번째 페이지의 게시글 목록을 검색하여 응답
+	int pageNum=1;
+	if(request.getParameter("pageNum")!=null) {//전달값이 있는 경우
+		pageNum=Integer.parseInt(request.getParameter("pageNum"));
+		}
+
+	//하나의 페이지에 검색되어 출력될 게시글의 갯수 설정 - 전달값을 반환받아 저장 가능
+	int pageSize=6;
+
+	
+	
+	
+	
+	//BOARD 테이블에 저장된 전체 게시글의 갯수를 검색하여 반환하는 DAO 클래스의 메소드 호출
+	// => 검색 기능 구현시 호출하는 메소드
+	int totalPurchase=PurchaseDAO.getDAO().selectPurchaseCount(keyword);
+
+
+	
+
+	//전체 페이지의 갯수를 계산하여 저장
+	//int totalPage=totalPurchase/pageSize+totalPurchase%pageSize==0?0:1;
+	int totalPage=(int)Math.ceil((double)totalPurchase/pageSize);
+
+	//요청 페이지 번호에 대한 검증
+	if(pageNum<=0 || pageNum>totalPage) {//비정상적인 요청 페이지 번호인 경우
+	pageNum=1;//첫번째 페이지의 게시글 목록이 검색되어 응답되도록 요청 페이지 번호 변경
+	}
+
+	//요청 페이지 번호에 대한 시작 게시글의 행번호를 계산하여 저장
+	//ex) 1Page : 1, 2Page : 11, 3Page : 21, 4Page : 31, ...
+	int startRow=(pageNum-1)*pageSize+1;
+	
+	
+	//요청 페이지 번호에 대한 종료 게시글의 행번호를 계산하여 저장
+	//ex) 1Page : 10, 2Page : 20, 3Page : 30, 4Page : 40, ...
+	int endRow=pageNum*pageSize;
+	
+	//마지막 페이지에 대한 종료 게시글의 행번호를 검색 게시글의 갯수로 변경
+	if(endRow>totalPurchase) {
+	endRow=totalPurchase;
+	}
+	
+	
+	//검색 관련 정보 및 요청 페이지에 대한 시작 게시글의 행번호와 종료 게시글의 행번호를 
+	//전달받아 BAORD 테이블에 저장된 특정 게시글에서 해당 범위의 게시글만을 검색하여 반환하는 
+	//DAO 클래스의 메소드 호출 - 검색 기능 구현시 호출하는 메소드
+	List<PurchaseDTO> purchaseList=PurchaseDAO.getDAO().searchPurchaseList(startRow, endRow, keyword);
+%>
+	
+
+
+	
+<% 
+	//페이지 번호 출력 및 링크 설정 - 블럭화 처리 
+	//하나의 페이지 블럭에 출력될 페이지 번호의 갯수를 설정
+		int blockSize=5;
+	
+	//페이지 블럭에 출력될 시작 페이지 번호를 계산하여 저장
+	//ex)1Block : 1, 2Block : 6, 3Block : 11, 4Block : 16,... 
+	int startPage=(pageNum-1)/blockSize*blockSize+1;
+	//페이지 블럭에 출력될 종료 페이지 번호를 계산하여 저장
+	//ex)1Block : 5, 2Block : 10, 3Block : 15, 4Block : 20,...
+	int endPage=startPage+blockSize-1;
+	//마지막 페이지 블럭의 종료 페이지 번호 변경
+	if(endPage>totalPage) {
+		endPage=totalPage;
+	}
+%>
+	
+
+<style type="text/css">
+.purchase{
+	width: 1070px;
+	margin-left: 400px;
+}
+table {
+    border: 0;
+    border-collapse: collapse;
+}
+table {
+    border-collapse: separate;
+    text-indent: initial;
+    white-space: normal;
+    line-height: normal;
+    font-weight: normal;
+    font-size: medium;
+    font-style: normal;
+    color: -internal-quirk-inherit;
+    text-align: start;
+    border-spacing: 2px;
+    font-variant: normal;
+}
+th {
+    border: 0;
+    color: #555555;
+    border-top: 1px solid #e8e8e8;
+	text-align: center;
+}
+td{
+	border-top: 1px solid #e8e8e8;
+	text-align: center;
+}
+th {
+    display: table-cell;
+    vertical-align: inherit;
+    font-weight: bold;
+    text-align: -internal-center;
+}
+#ssear {
+	text-align: center;
+	margin-bottom: 5px;
+}
+.pc_date { width: 150px; }
+.pc_code { width: 60px; }
+.pc_id { width: 150px; }
+.pc_price { width: 100px; }
+.pc_amount { width: 100px; }
+.pc_lname { width: 100px; }
+.pc_lphone { width: 150px; }
+.pc_address { width: 150px; }
+.pc_status{ width: 50px; }
+a:hover {
+	text-decoration: none;
+	font-weight: bold;
+}
+.idid{
+	font-weight: bold;
+	color: #555555;
+}
+#paging{margin-top: 50px; margin-left: 850px;}
+</style>
+
+<div class="purchase">
+<table>
+	<tr>
+		<th class="pc_date">주문일</th>
+		<th class="pc_no">구매 번호</th>
+		<th class="pc_id">구매자 아이디</th>
+		<th class="pc_price">구매 총액</th>
+		<th class="pc_amount">구매 수량</th>
+		<th class="pc_lname">받는분</th>
+		<th class="pc_lphone">전화번호</th>
+		<th class="pc_address">주소</th>
+		<th class="pc_status">배송상태</th>
+	</tr>
+	
+	<% if(purchaseList.isEmpty()) { %>
+		<tr>
+			<td colspan="9">검색된 주문내역이 없습니다.</td>
+		</tr>	
+		<% } else { %>
+	<% for(PurchaseDTO pc:purchaseList){ %>
+	<tr>
+		<td class="pc_date"><%=pc.getPcDate()%></td>
+		<td class="pc_no"><%=pc.getPcNo()%></td>
+		<td class="pc_id"><%=pc.getPcId()%></td>
+		<td class="pc_price"><%=DecimalFormat.getInstance().format(pc.getPcPrice())%></td>
+		<td class="pc_amount"><%=pc.getPcAmount()%></td>
+		<td class="pc_lname"><%=pc.getPcLname()%></td>
+		<td class="pc_lphone"><%=pc.getPcLphone()%></td>
+		<td class="pc_status">[<%=pc.getPcZipcode() %>]<%=pc.getPcLaddress1() %> <%=pc.getPcLaddress2() %>
+		</td>
+		<td  class="pc_status">
+				<select class="status" num="<%=pc.getPcNo()%>"  name="<%=pc.getPcId()%>"   >
+					<option value="0" <% if(pc.getPcStatus()==0) { %> selected="selected" <% } %>>준비중</option>
+					<option value="1" <% if(pc.getPcStatus()==1) { %> selected="selected" <% } %>>배송중</option>
+					<option value="2" <% if(pc.getPcStatus()==2) { %> selected="selected" <% } %>>배송완료</option>
+				</select>
+		</td>
+	</tr>
+	<% } %>
+	<% } %>
+</table>
+	<div id="ssear">
+			<%-- 사용자로부터 검색어를 입력받아 게시글 검색 기능 구현 --%>
+		<form action="<%=request.getContextPath()%>/index.jsp?workgroup=admin&work=purchase" method="post">
+			<%-- select 태그에 의해 전달되는 값은 반드시 검색단어를 비교하기 위한 컬럼명과
+			같은 이름으로 전달되도록 설정 --%>
+				<span class="idid">&nbsp;아이디&nbsp;</span>
+			<input type="text" name="keyword">
+			<button type="submit">검색</button>		
+		</form>
+	</div>
+</div>
+
+
+
+
+<div id="paging">
+	<% if(startPage>blockSize) {//첫번째 페이지 블럭이 아닌 경우%>
+		<a href="<%=request.getContextPath()%>/index.jsp?workgroup=admin&work=purchase&pageNum=<%=startPage-blockSize%>">[이전]</a>
+	<% } %>
+	
+	<% for(int i=startPage;i<=endPage;i++) { %>
+		<% if(pageNum!=i) {//요청 페이지 번호와 이벤트 페이지 번호가 다른 경우 - 링크 제공 %>
+			<a href="<%=request.getContextPath()%>/index.jsp?workgroup=admin&work=purchase&pageNum=<%=i%>">&nbsp;[<%=i %>]&nbsp;</a>
+		<% } else {//요청 페이지 번호와 이벤트 페이지 번호가 같은 경우 - 링크 미제공 %>
+			&nbsp;<%=i %>&nbsp;
+		<% } %>	
+	<% } %>
+	
+	<% if(endPage!=totalPage) {//마지막 페이지 블럭이 아닌 경우 %>
+		<a href="<%=request.getContextPath()%>/index.jsp?workgroup=admin&work=purchase&pageNum=<%=startPage+blockSize%>">[다음]</a>
+	<% } %>
+</div>
+
+
+
+
+
+
+		<%-- 구매상태변경 action페이지만들고 연결해줘야함! --%>
+
+<script type="text/javascript" >
+
+$(".status").change(function() {
+	//이벤트가 발생된 입력태그의 태그 속성값을 반환받아 저장 
+	// => 배송상태를 변경하고자 하는 회원의 아이디를 제공받아 저장 - 식별자
+	var pc_id=$(this).attr("name");
+	var pc_no=$(this).attr("num");
+	//이벤트가 발생된 입력태그의 입력값을 반환받아 저장
+	//  변경할 회원상태를 제공받아 저장 - 변경값
+	var pc_status=$(this).val();
+	location.href="<%=request.getContextPath()%>/index.jsp?workgroup=admin&work=purchase_status_action&pc_id="+pc_id+"&pc_status="+pc_status+"&pc_no=+"+pc_no;
+});
+</script>
+
+
+
+
+
+
+
+

@@ -1,0 +1,45 @@
+<%@page import="tinynest.dao.PurchaseDAO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+ %>
+ <%-- 관리자만 요청 가능한 문서--%>
+<%@include file="/security/admin_check.jspf"%>
+ 
+ 
+ <%
+ 
+ //비정상적인 요청에 대한 처리 
+ 	if(request.getParameter("pc_id")==null || request.getParameter("pc_status")==null || request.getParameter("pc_no")==null){
+ 		out.println("<script type='text/javascript'>");
+ 		out.println("location.href='"+request.getContextPath()+"/index.jsp?workgroup=error&work=error_400';");
+ 		out.println("</script>");
+ 		return;
+	}
+ 
+ 
+ 
+ 	System.out.println(request.getParameter("pc_id")); 		//two3
+ 	System.out.println(request.getParameter("pc_no").replaceAll(" ", ""));		//  64
+ 	
+ 	System.out.println(request.getParameter("pc_status"));	//0
+ 
+ 		
+ 		String pc_id=request.getParameter("pc_id");
+ 		int pc_no=Integer.parseInt(request.getParameter("pc_no").replaceAll(" ", ""));
+ 		int pc_status=Integer.parseInt(request.getParameter("pc_status"));
+ 		
+ 		
+ 		
+		PurchaseDAO.getDAO().updateStatus(pc_id,pc_no,pc_status);
+ 		
+ 		
+ 		
+ 		//페이지 이동
+ 		//페이지 이동
+ 		out.println("<script type='text/javascript'>");
+ 		out.println("location.href='"+request.getContextPath()+"/index.jsp?workgroup=admin&work=purchase';");
+ 		out.println("</script>");
+ 	%>
+ 	
+ 	

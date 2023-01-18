@@ -1,0 +1,112 @@
+<%@page import="java.text.DecimalFormat"%>
+<%@page import="tinynest.dao.PurchaseDAO"%>
+<%@page import="tinynest.dto.PurchaseDTO"%>
+<%@page import="java.util.List"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@include file="/security/login_url.jspf" %>
+<%
+	String loginId = loginMember.getId();
+	List<PurchaseDTO> purchaseList = PurchaseDAO.getDAO().selectPurchaseListById(loginId);
+%>
+
+<style type="text/css">
+#myOrderContainer {
+	width: 900px;
+	margin-left: 450px;
+}
+
+#myOrderTable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 1.2em;
+}
+
+#myOrderTable tr {
+	border-top: 1px solid gray;
+	border-bottom: 1px solid gray;
+}
+
+.border {
+	border-top: 1px solid #e6e6e6;
+	border-bottom: 1px solid #e6e6e6;
+}
+
+#myOrderImg {
+	width: 80px;
+	height: 100px;
+}
+
+.writeReview {
+	text-align: right;
+	width: 80%;
+	height: 80%;
+}
+
+#p_text {
+	font-size: 12px;
+	font-weight: normal;
+}
+
+.p_number {
+	font-size: 12px;
+	font-style: italic;
+	font-weight: normal;
+}
+
+#h1{margin-left: 450px; margin-top: 50px;}
+#orderListTitle {margin-left: 300px; margin-bottom: 50px; font-size: 10px; font-weight: normal;}
+</style>
+<body>
+<div id="orderListTitle">ORDER LIST</div>
+<h1 id="h1">구매목록</h1>
+<div id="myOrderContainer">
+	<table id="myOrderTable">
+	<% if (purchaseList == null || purchaseList.size() == 0) { %>
+		<tr>
+		
+		</tr>
+	<% } else { %>
+		<% for (PurchaseDTO purchase : purchaseList) { %>
+		<tr style="border-top: 1px solid black;">
+			<td rowspan="4" align="center">
+				<input type="hidden" value="<%=purchase.getPcCode()%>">
+				<a href="<%=request.getContextPath()%>/index.jsp?workgroup=product&work=product_detail&p_code=<%=purchase.getPcCode()%>">
+					<img src="<%=request.getContextPath()%>/product_image/<%=purchase.getpImg()%>" alt="myOrderImg" id="myOrderImg">
+				</a>
+			</td>
+			<td>구매번호</td>
+			<td class="pc_no" class="p_number"><%= purchase.getPcNo() %></td>
+		</tr>
+		<tr class="border" >
+			<td>상품명</td>
+			<td id="p_text"><%= purchase.getpName() %></td>
+			<td rowspan="2">
+				<div class="writeReview">
+					<a href="<%=request.getContextPath()%>/index.jsp?workgroup=board&work=review_write&pc_code=<%=purchase.getPcCode() %>&r_pcno=<%=purchase.getPcNo() %>"><img src="<%=request.getContextPath() %>/members/images/review.png" alt="review" class="toReview"></a>
+				</div>
+			</td>
+		</tr>
+		<tr class="border">
+			<td>구입갯수</td>
+			<td class="p_number"><%= purchase.getPcAmount() %>개</td>
+		</tr>
+		<tr style="border-bottom: 1px solid black;">
+			<td>소계금액</td>
+			<td class="p_number"><%= DecimalFormat.getInstance().format(purchase.getPcPrice()) %>원</td>
+		</tr>
+		<% } %>
+	<% } %>
+	</table>
+</div>
+<%-- 
+<script type="text/javascript">
+$(".writeReview").click(function() {
+	const productCode = $(this).parent().parent().prev().find("input").val();
+	const purchaseNo = $(this).parent().parent().prev().children().filter(".pc_no").text();
+	location.href = "<%=request.getContextPath()%>/index.jsp?workgroup=board&work=review_write&r_code="+productCode+"&r_pcno="+purchaseNo;
+});
+</script>
+--%>
+
+</body>

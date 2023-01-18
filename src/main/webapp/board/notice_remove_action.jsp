@@ -1,0 +1,43 @@
+<%@page import="tinynest.dao.NoticeDAO"%>
+<%@page import="tinynest.dto.NoticeDTO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@include file="/security/admin_check.jspf" %>
+<%
+	//비정상적인 요청에 대한 응답 처리
+	if(request.getParameter("n_no")==null) {
+		out.println("<script type='text/javascript'>");
+		out.println("location.href='"+request.getContextPath()+"/index.jsp?workgroup=error&work=error_400';");
+		out.println("</script>");
+		return;
+	}
+
+	//전달값 반환받아 저장
+	int n_no=Integer.parseInt(request.getParameter("n_no"));
+	
+	//글번호를 전달받아 notice 테이블에 저장된 해당 글번호의 게시글을 검색하여 반환하는 DAO 클래스 호출
+	NoticeDTO notice=NoticeDAO.getDAO().selectNotice(n_no);
+	
+	if(notice==null || notice.getN_status()==0){
+		out.println("<script type='text/javascript'>");
+		out.println("location.href='"+request.getContextPath()+"/index.jsp?workgroup=error&work=error_400';");
+		out.println("</script>");
+		return;
+	}
+	
+	//관리자가 아닌 경우 에러페이지로 이동되도록 응답 처리 - 비정상적인 요청
+	if(loginMember.getStatus()!=9 ) {
+		out.println("<script type='text/javascript'>");
+		out.println("location.href='"+request.getContextPath()+"/index.jsp?workgroup=error&work=error_400';");
+		out.println("</script>");
+		return;
+	}
+	
+	notice.setN_status(0);
+	NoticeDAO.getDAO().updateNotice(notice);
+	
+	//페이지 이동
+	out.println("<script type='text/javascript'>");
+	out.println("location.href='"+request.getContextPath()+"/index.jsp?workgroup=board&work=notice';");
+	out.println("</script>");
+%>
