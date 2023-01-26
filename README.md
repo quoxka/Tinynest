@@ -20,8 +20,6 @@
 <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=HTML5&logoColor=white">
 <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=CSS3&logoColor=white">
 ## 📊 주요 기능
-- 상품 검색
-- 회원 가입 및 로그인
-- 장바구니 
-- 구매한 상품에 대한 리뷰 작성 
-- Q/A 게시판
+- 키워드를 이용한 상품 검색
+- 상품 별 카테고리 이동
+
